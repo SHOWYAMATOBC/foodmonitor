@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line as LineChart } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -115,7 +115,7 @@ const AIPredictionVisualizer: React.FC<Props> = ({ visible, onClose, sensorData 
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
           <div className="h-80 p-2 bg-black/5 rounded">
-            <Line data={data as any} options={options as any} />
+            <LineChart data={data as any} options={options as any} />
           </div>
 
           <div className="h-80 p-4 relative bg-gradient-to-tr from-sky-900 to-indigo-700 rounded text-white overflow-hidden">

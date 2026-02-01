@@ -1,5 +1,5 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line as LineChart } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
@@ -51,7 +51,7 @@ const PredictionPanel: React.FC<PredictionPanelProps> = ({ visible, onClose }) =
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="p-2">
-            <Line data={data} options={options as any} />
+            <LineChart data={data} options={options as any} />
           </div>
           <div className="p-2">
             <h4 className="font-medium">How the AI predicts</h4>

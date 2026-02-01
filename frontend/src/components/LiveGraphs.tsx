@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line as LineChart } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -134,7 +134,7 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
             </button>
           </div>
           <div className="h-48">
-            <Line data={createDataset('CO₂', data.co2, 'rgb(75, 192, 192)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('CO₂', data.co2, 'rgb(75, 192, 192)', data.labels)} options={commonOptions} />
           </div>
         </div>
 
@@ -149,7 +149,7 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
             </button>
           </div>
           <div className="h-48">
-            <Line data={createDataset('Ethylene', data.ethylene, 'rgb(153, 102, 255)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('Ethylene', data.ethylene, 'rgb(153, 102, 255)', data.labels)} options={commonOptions} />
           </div>
         </div>
 
@@ -164,7 +164,7 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
             </button>
           </div>
           <div className="h-48">
-            <Line data={createDataset('Alcohol', data.alcohol, 'rgb(255, 159, 64)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('Alcohol', data.alcohol, 'rgb(255, 159, 64)', data.labels)} options={commonOptions} />
           </div>
         </div>
 
@@ -179,7 +179,7 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
             </button>
           </div>
           <div className="h-48">
-            <Line data={createDataset('VOC', data.voc, 'rgb(255, 99, 132)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('VOC', data.voc, 'rgb(255, 99, 132)', data.labels)} options={commonOptions} />
           </div>
         </div>
 
@@ -194,7 +194,7 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
             </button>
           </div>
           <div className="h-48">
-            <Line data={createDataset('Temperature', data.temperature, 'rgb(255, 205, 86)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('Temperature', data.temperature, 'rgb(255, 205, 86)', data.labels)} options={commonOptions} />
           </div>
         </div>
 
@@ -209,7 +209,7 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
             </button>
           </div>
           <div className="h-48">
-            <Line data={createDataset('Humidity', data.humidity, 'rgb(54, 162, 235)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('Humidity', data.humidity, 'rgb(54, 162, 235)', data.labels)} options={commonOptions} />
           </div>
         </div>
       </div>

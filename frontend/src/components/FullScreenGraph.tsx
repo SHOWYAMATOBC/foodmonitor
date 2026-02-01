@@ -1,5 +1,5 @@
 import React from 'react';
-import { Line } from 'react-chartjs-2';
+import { Line as LineChart } from 'react-chartjs-2';
 import { ChartData, ChartOptions } from 'chart.js';
 import { AiOutlineClose } from 'react-icons/ai';
 import type { ComponentType } from 'react';
@@ -35,7 +35,7 @@ const FullScreenGraph: React.FC<FullScreenGraphProps> = ({
         </div>
         <div className="flex-grow min-h-0">
           <div className="h-full">
-            <Line data={data} options={{ ...options, maintainAspectRatio: false }} />
+            <LineChart data={data} options={{ ...options, maintainAspectRatio: false }} />
           </div>
         </div>
       </div>

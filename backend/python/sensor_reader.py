@@ -25,6 +25,8 @@ import json
 import requests
 import sys
 import time
+import csv
+import os
 from datetime import datetime
 import logging
 
@@ -34,6 +36,8 @@ BAUD_RATE = 9600
 BACKEND_URL = 'http://localhost:3001/api/sensor/data'
 RETRY_COUNT = 5
 RETRY_DELAY = 2  # seconds
+LOG_FILE = 'sensor_readings.csv'
+MAX_LOG_ENTRIES = 500
 
 # Setup logging
 logging.basicConfig(
@@ -58,6 +62,7 @@ class DGS2Reader:
         self.baudrate = baudrate
         self.ser = None
         self.readings_count = 0
+        self.csv_entries_count = 0
         
     def connect(self):
         """
@@ -135,7 +140,7 @@ class DGS2Reader:
             reading = {
                 'timestamp': datetime.utcnow().isoformat() + 'Z',
                 'sensor_sn': sensor_sn,
-                'ppb': float(ppb),
+                'ppb': float(ppb)-2300, # Adjusting baseline as per sensor calibration
                 'temperature': float(temp_raw) / 100.0,
                 'humidity': float(hum_raw) / 100.0,
                 'adc_gas': int(adc_gas),
@@ -180,6 +185,41 @@ class DGS2Reader:
             logger.error(f'Failed to send data to backend: {e}')
             return False
     
+    def save_to_csv(self, data):
+        """
+        Save reading to CSV log file (only first 500 entries, then stop)
+        
+        Args:
+            data (dict): Parsed sensor reading
+        """
+        try:
+            # Only save if we haven't reached the limit
+            if self.csv_entries_count >= MAX_LOG_ENTRIES:
+                return
+            
+            # Check if file exists to decide whether to write header
+            file_exists = os.path.exists(LOG_FILE)
+            
+            # Append entry to CSV
+            with open(LOG_FILE, 'a', newline='') as csvfile:
+                fieldnames = ['timestamp', 'sensor_sn', 'ppb', 'temperature', 'humidity', 'adc_gas', 'adc_temp', 'adc_hum']
+                writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+                
+                # Write header only if file is new
+                if not file_exists:
+                    writer.writeheader()
+                
+                writer.writerow(data)
+            
+            self.csv_entries_count += 1
+            logger.debug(f'Logged to CSV ({self.csv_entries_count}/{MAX_LOG_ENTRIES})')
+            
+            # Log when we reach the limit
+            if self.csv_entries_count >= MAX_LOG_ENTRIES:
+                logger.info(f'CSV logging limit reached ({MAX_LOG_ENTRIES} entries). No more entries will be saved.')
+        except Exception as e:
+            logger.error(f'Failed to save to CSV: {e}')
+    
     def run(self):
         """
         Main reader loop
@@ -209,6 +249,9 @@ class DGS2Reader:
                                 
                                 # Send to backend
                                 if self.send_to_backend(reading):
+                                    # Save to CSV (keeps last 500)
+                                    self.save_to_csv(reading)
+                                    
                                     logger.info(
                                         f'Reading #{self.readings_count} | '
                                         f'PPB: {reading["ppb"]:.1f} | '
