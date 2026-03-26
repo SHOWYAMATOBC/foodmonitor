@@ -1,0 +1,15 @@
+node_modules/
+package-lock.json
+.env
+.DS_Store
+*.log
+*.csv
+__pycache__/
+*.pyc
+.pytest_cache/
+dist/
+build/
+*.egg-info/
+.venv/
+venv/
+logs/
