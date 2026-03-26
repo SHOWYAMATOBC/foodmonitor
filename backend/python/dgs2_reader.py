@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-DDS2-970650 VOC Gas Sensor Reader
+DGS2-970650 VOC Gas Sensor Reader
 
-Reads VOC (Volatile Organic Compounds) data from DDS2-970650 digital gas sensor.
+Reads VOC (Volatile Organic Compounds) data from DGS2-970650 digital gas sensor.
 Handles sensor warm-up, calibration, and stores raw readings in CSV.
 
 Sensor Output Format:
@@ -33,7 +33,7 @@ from typing import Dict, Optional, List
 # Configuration
 SERIAL_PORT = '/dev/ttyUSB0'
 BAUD_RATE = 9600
-DDS2_CSV_FILENAME = 'dds2_data.csv'
+DGS2_CSV_FILENAME = 'dgs2_data.csv'
 READ_TIMEOUT = 2  # seconds
 
 # Calibration

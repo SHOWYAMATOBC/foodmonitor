@@ -18,7 +18,7 @@ from datetime import datetime
 
 # Import sensor readers and data fusion
 from bme688_reader import BME688Reader
-from dds2_reader import DDS2Reader
+from backend.python.dgs2_reader import DDS2Reader
 from data_fusion import DataFusion
 
 # Logging
