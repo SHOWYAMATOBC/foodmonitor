@@ -1,3 +1,8 @@
-adafruit-circuitpython-bme680==2.6.12
-adafruit-blinka==8.46.1
-pyserial==3.5
+adafruit-circuitpython-bme680>=3.7.0
+adafruit-blinka>=8.0.0
+pyserial>=3.5
+flask>=3.0.0
+flask-cors>=4.0.0
+flask-socketio>=5.3.0
+python-socketio>=5.9.0
+python-engineio>=4.7.0
