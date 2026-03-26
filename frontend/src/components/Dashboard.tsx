@@ -6,6 +6,7 @@ import MapView from './MapView';
 import WifiPanel from './WifiPanel';
 import SettingsPanel from './SettingsPanel';
 import FoodStatusPanel from './FoodStatusPanel';
+import SensorListPanel from './SensorListPanel';
 import AIPredictionVisualizer from './AIPredictionVisualizer';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
@@ -112,18 +113,28 @@ const Dashboard: React.FC = () => {
             Freshness Monitoring Dashboard
           </h1>
           <div className="flex gap-4 items-center">
-            <button
-              onClick={() => setShowCamera(!showCamera)}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-              {showCamera ? 'Hide Camera' : 'Show Camera'}
-            </button>
-            <button
-              onClick={() => setShowWifi(true)}
-              className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors"
-            >
-              Wi‑Fi
-            </button>
+            <div className="relative group">
+              <button
+                disabled
+                className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors opacity-75 cursor-not-allowed"
+              >
+                {showCamera ? 'Hide Camera' : 'Show Camera'}
+              </button>
+              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Coming soon
+              </div>
+            </div>
+            <div className="relative group">
+              <button
+                disabled
+                className="px-4 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 transition-colors opacity-75 cursor-not-allowed"
+              >
+                Wi‑Fi
+              </button>
+              <div className="absolute top-full mt-2 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                Coming soon
+              </div>
+            </div>
             <button
               onClick={() => setShowPrediction(true)}
               className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
@@ -145,8 +156,24 @@ const Dashboard: React.FC = () => {
 
         <SensorPanel data={sensorData} />
 
-        {/* Food status panel below the sensor metrics */}
-        <FoodStatusPanel name="Apples" status="Fresh" predictedSpoilDate={new Date(Date.now() + 5 * 24 * 3600 * 1000).toLocaleDateString()} />
+        {/* Two Column Layout: Left (Food Status Main) + Right (Sensors Compact) */}
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 mt-8">
+          {/* Left Column: Food Status - MAIN WINDOW (3 columns) */}
+          <div className="lg:col-span-3 h-96">
+            <FoodStatusPanel 
+              status="Fresh" 
+              conditionRating={8}
+            />
+          </div>
+
+          {/* Right Column: Sensor List - COMPACT (2 columns) */}
+          <div className="lg:col-span-2 h-96">
+            <SensorListPanel 
+              onRefresh={() => console.log('Refresh sensors')}
+              onGetList={() => console.log('Get sensor list')}
+            />
+          </div>
+        </div>
 
         {showCamera && (
           <div className="my-8 max-w-screen-xl mx-auto">
@@ -164,7 +191,7 @@ const Dashboard: React.FC = () => {
         <SettingsPanel visible={showSettings} onClose={() => setShowSettings(false)} />
 
         <LiveGraphs data={graphData} />
-  <AIPredictionVisualizer visible={showPrediction} onClose={() => setShowPrediction(false)} sensorData={sensorData} />
+        <AIPredictionVisualizer visible={showPrediction} onClose={() => setShowPrediction(false)} sensorData={sensorData} />
       </div>
     </div>
   );
