@@ -19,10 +19,12 @@ try:
     import board
     import busio
     import adafruit_bme680
+    BME688_LIB_AVAILABLE = True
 except ImportError:
-    print("Error: Adafruit BME680 library not found.")
-    print("Install with: pip install adafruit-circuitpython-bme680 adafruit-blinka")
-    sys.exit(1)
+    board = None
+    busio = None
+    adafruit_bme680 = None
+    BME688_LIB_AVAILABLE = False
 
 # Configuration
 I2C_ADDRESS = 0x77
@@ -61,6 +63,10 @@ class BME688Sensor:
 
     def initialize_sensor(self) -> bool:
         """Initialize the BME688 sensor"""
+        if not BME688_LIB_AVAILABLE:
+            logger.error("✗ Adafruit BME680 library not found. Running without BME688 sensor.")
+            logger.error("  Install with: pip install adafruit-circuitpython-bme680 adafruit-blinka")
+            return False
         try:
             i2c = busio.I2C(board.SCL, board.SDA)
             self.sensor = adafruit_bme680.Adafruit_BME680_I2C(i2c, address=I2C_ADDRESS)

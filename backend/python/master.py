@@ -17,7 +17,20 @@ from collections import deque
 from bme688_sensor import BME688Sensor
 from dgs2_sensor import DGS2Sensor
 from calibrator import DataCalibrator
-import realtime_data  # Shared in-memory buffer module
+
+try:
+    import realtime_data  # Optional shared buffer module
+except ModuleNotFoundError:
+    class _RealtimeDataFallback:
+        @staticmethod
+        def update_buffer(_data):
+            return None
+
+        @staticmethod
+        def clear_buffer():
+            return None
+
+    realtime_data = _RealtimeDataFallback()
 
 # Logging
 logging.basicConfig(

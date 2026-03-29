@@ -9,7 +9,19 @@ from flask_socketio import SocketIO
 import threading
 import time
 
-import realtime_data
+# Local in-process fallback buffer (used when no shared realtime_data module exists)
+_current_reading = None
+_history = []
+
+
+def get_current_reading():
+    return _current_reading
+
+
+def get_graph_history(limit=200):
+    if limit and len(_history) > limit:
+        return _history[-limit:]
+    return _history
 
 API_HOST = '0.0.0.0'
 API_PORT = 5000
@@ -57,7 +69,7 @@ def broadcast_realtime_data():
             
             # Sensor data every 2s
             if (now - last_broadcast['sensor']) >= 2:
-                reading = realtime_data.get_current_reading()
+                reading = get_current_reading()
                 if reading and connected_clients:
                     socketio.emit('sensor_data_stream', {
                         'success': True,
@@ -67,7 +79,7 @@ def broadcast_realtime_data():
             
             # Stats every 2s
             if (now - last_broadcast['stats']) >= 2:
-                reading = realtime_data.get_current_reading()
+                reading = get_current_reading()
                 if reading and connected_clients:
                     socketio.emit('stats_stream', {
                         'success': True,
@@ -85,7 +97,7 @@ def broadcast_realtime_data():
             
             # Sensor status every 5s
             if (now - last_broadcast['status']) >= 5:
-                reading = realtime_data.get_current_reading()
+                reading = get_current_reading()
                 if connected_clients:
                     socketio.emit('sensor_status_stream', {
                         'success': True,
@@ -98,7 +110,7 @@ def broadcast_realtime_data():
             
             # Graph data every 5s
             if (now - last_broadcast['graph']) >= 5:
-                history = realtime_data.get_graph_history()
+                history = get_graph_history()
                 if history and connected_clients:
                     socketio.emit('graph_data_stream', {
                         'success': True,
