@@ -1,8 +1,6 @@
 adafruit-circuitpython-bme680>=3.7.0
 adafruit-blinka>=8.0.0
+smbus2>=0.4.3
 pyserial>=3.5
 flask>=3.0.0
 flask-cors>=4.0.0
-flask-socketio>=5.3.0
-python-socketio>=5.9.0
-python-engineio>=4.7.0

@@ -125,61 +125,16 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-4">
           <div className="flex justify-between items-center mb-2">
-            <h3 className="text-gray-700 font-medium">CO₂ Levels (ppm)</h3>
+            <h3 className="text-gray-700 font-medium">VOC AQI</h3>
             <button
-              onClick={() => openFullScreen('CO₂ Levels (ppm)', createDataset('CO₂', data.co2, 'rgb(75, 192, 192)', data.labels))}
+              onClick={() => openFullScreen('VOC AQI', createDataset('VOC AQI', data.voc, 'rgb(255, 99, 132)', data.labels))}
               className="p-2 hover:bg-gray-100 rounded-full transition-colors"
             >
               <FullscreenIcon size={20} />
             </button>
           </div>
           <div className="h-48">
-            <LineChart data={createDataset('CO₂', data.co2, 'rgb(75, 192, 192)', data.labels)} options={commonOptions} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-gray-700 font-medium">Ethylene Levels (ppb)</h3>
-            <button
-              onClick={() => openFullScreen('Ethylene Levels (ppb)', createDataset('Ethylene', data.ethylene, 'rgb(153, 102, 255)', data.labels))}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <FullscreenIcon size={20} />
-            </button>
-          </div>
-          <div className="h-48">
-            <LineChart data={createDataset('Ethylene', data.ethylene, 'rgb(153, 102, 255)', data.labels)} options={commonOptions} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-gray-700 font-medium">Alcohol Levels (ppm)</h3>
-            <button
-              onClick={() => openFullScreen('Alcohol Levels (ppm)', createDataset('Alcohol', data.alcohol, 'rgb(255, 159, 64)', data.labels))}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <FullscreenIcon size={20} />
-            </button>
-          </div>
-          <div className="h-48">
-            <LineChart data={createDataset('Alcohol', data.alcohol, 'rgb(255, 159, 64)', data.labels)} options={commonOptions} />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex justify-between items-center mb-2">
-            <h3 className="text-gray-700 font-medium">VOC Index</h3>
-            <button
-              onClick={() => openFullScreen('VOC Index', createDataset('VOC', data.voc, 'rgb(255, 99, 132)', data.labels))}
-              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-            >
-              <FullscreenIcon size={20} />
-            </button>
-          </div>
-          <div className="h-48">
-            <LineChart data={createDataset('VOC', data.voc, 'rgb(255, 99, 132)', data.labels)} options={commonOptions} />
+            <LineChart data={createDataset('VOC AQI', data.voc, 'rgb(255, 99, 132)', data.labels)} options={commonOptions} />
           </div>
         </div>
 
@@ -210,6 +165,51 @@ const LiveGraphs: React.FC<LiveGraphsProps> = ({ data }) => {
           </div>
           <div className="h-48">
             <LineChart data={createDataset('Humidity', data.humidity, 'rgb(54, 162, 235)', data.labels)} options={commonOptions} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-gray-700 font-medium">VOC (ppb)</h3>
+            <button
+              onClick={() => openFullScreen('VOC (ppb)', createDataset('VOC', data.co2, 'rgb(75, 192, 192)', data.labels))}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <FullscreenIcon size={20} />
+            </button>
+          </div>
+          <div className="h-48">
+            <LineChart data={createDataset('VOC', data.co2, 'rgb(75, 192, 192)', data.labels)} options={commonOptions} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-gray-700 font-medium">Pressure (hPa)</h3>
+            <button
+              onClick={() => openFullScreen('Pressure (hPa)', createDataset('Pressure', data.ethylene, 'rgb(153, 102, 255)', data.labels))}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <FullscreenIcon size={20} />
+            </button>
+          </div>
+          <div className="h-48">
+            <LineChart data={createDataset('Pressure', data.ethylene, 'rgb(153, 102, 255)', data.labels)} options={commonOptions} />
+          </div>
+        </div>
+
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex justify-between items-center mb-2">
+            <h3 className="text-gray-700 font-medium">Gas Resistance (ohm)</h3>
+            <button
+              onClick={() => openFullScreen('Gas Resistance (ohm)', createDataset('Gas Resistance', data.alcohol, 'rgb(255, 159, 64)', data.labels))}
+              className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <FullscreenIcon size={20} />
+            </button>
+          </div>
+          <div className="h-48">
+            <LineChart data={createDataset('Gas Resistance', data.alcohol, 'rgb(255, 159, 64)', data.labels)} options={commonOptions} />
           </div>
         </div>
       </div>

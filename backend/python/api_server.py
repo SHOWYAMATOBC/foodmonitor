@@ -1,144 +1,225 @@
 #!/usr/bin/env python3
-"""WebSocket-Only API Server - Real-time streaming only"""
+"""HTTP Polling API Server - CSV-backed sensor endpoints"""
 
 import logging
-from datetime import datetime, timedelta
-from flask import Flask, jsonify, request
+import csv
+import os
+from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_socketio import SocketIO
-import threading
-import time
-
-# Local in-process fallback buffer (used when no shared realtime_data module exists)
-_current_reading = None
-_history = []
-
-
-def get_current_reading():
-    return _current_reading
-
-
-def get_graph_history(limit=200):
-    if limit and len(_history) > limit:
-        return _history[-limit:]
-    return _history
 
 API_HOST = '0.0.0.0'
 API_PORT = 5000
+
+DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'data')
+CSV_FILES = {
+    'bme688_log': os.path.join(DATA_DIR, 'bme688_readings.csv'),
+    'dgs2_log': os.path.join(DATA_DIR, 'dgs2_readings.csv'),
+    'anomaly_log': os.path.join(DATA_DIR, 'anomalies.csv'),
+    'combined_log': os.path.join(DATA_DIR, 'calibrated_readings.csv')
+}
 
 logging.basicConfig(level=logging.INFO, format='[%(asctime)s] %(levelname)s - %(message)s', datefmt='%H:%M:%S')
 logger = logging.getLogger('API')
 
 app = Flask(__name__)
 CORS(app)
-socketio = SocketIO(app, cors_allowed_origins="*", ping_timeout=60, ping_interval=25)
-
-connected_clients = set()
-last_broadcast = {'sensor': 0, 'graph': 0, 'stats': 0, 'status': 0}
 
 
-# ============================================================================
-# WEBSOCKET HANDLERS - ONLY REAL-TIME STREAMING
-# ============================================================================
-
-@socketio.on('connect')
-def handle_connect():
-    client_id = request.sid
-    connected_clients.add(client_id)
-    logger.info(f"✓ WebSocket connected: {client_id} (total: {len(connected_clients)})")
+def _combined_csv_path() -> str:
+    """Return combined CSV path, supporting combined.csv if present."""
+    preferred = os.path.join(DATA_DIR, 'combined.csv')
+    if os.path.exists(preferred):
+        return preferred
+    return CSV_FILES['combined_log']
 
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    client_id = request.sid
-    connected_clients.discard(client_id)
-    logger.info(f"✗ WebSocket disconnected: {client_id} (total: {len(connected_clients)})")
+def _read_csv_rows(path: str):
+    """Read CSV rows as list[dict]."""
+    if not os.path.exists(path):
+        return []
+
+    try:
+        with open(path, 'r', newline='', encoding='utf-8') as csv_file:
+            reader = csv.DictReader(csv_file)
+            return list(reader)
+    except Exception as e:
+        logger.error(f"Failed reading CSV {path}: {e}")
+        return []
 
 
-# ============================================================================
-# BACKGROUND BROADCASTER - ALL DATA VIA WEBSOCKET
-# ============================================================================
+def _metric_response(metric_name: str, source_column: str):
+    """Build standardized metric response from combined CSV rows."""
+    rows = _read_csv_rows(_combined_csv_path())
 
-def broadcast_realtime_data():
-    """Stream ALL data via WebSocket - NO polling needed"""
-    logger.info("🔄 WebSocket broadcaster started (real-time only)")
-    
-    while True:
-        try:
-            now = time.time()
-            
-            # Sensor data every 2s
-            if (now - last_broadcast['sensor']) >= 2:
-                reading = get_current_reading()
-                if reading and connected_clients:
-                    socketio.emit('sensor_data_stream', {
-                        'success': True,
-                        'data': reading
-                    }, to=list(connected_clients))
-                last_broadcast['sensor'] = now
-            
-            # Stats every 2s
-            if (now - last_broadcast['stats']) >= 2:
-                reading = get_current_reading()
-                if reading and connected_clients:
-                    socketio.emit('stats_stream', {
-                        'success': True,
-                        'data': {
-                            'temperature': reading.get('temperature'),
-                            'humidity': reading.get('humidity'),
-                            'pressure': reading.get('pressure'),
-                            'voc_ppb': reading.get('voc_ppb'),
-                            'overall_aqi': reading.get('overall_aqi'),
-                            'gas_aqi': reading.get('gas_aqi')
-                        },
-                        'timestamp': reading.get('timestamp')
-                    }, to=list(connected_clients))
-                last_broadcast['stats'] = now
-            
-            # Sensor status every 5s
-            if (now - last_broadcast['status']) >= 5:
-                reading = get_current_reading()
-                if connected_clients:
-                    socketio.emit('sensor_status_stream', {
-                        'success': True,
-                        'data': {
-                            'bme688': 'connected' if reading else 'disconnected',
-                            'dgs2': 'connected' if reading else 'disconnected'
-                        }
-                    }, to=list(connected_clients))
-                last_broadcast['status'] = now
-            
-            # Graph data every 5s
-            if (now - last_broadcast['graph']) >= 5:
-                history = get_graph_history()
-                if history and connected_clients:
-                    socketio.emit('graph_data_stream', {
-                        'success': True,
-                        'data': history[-50:]
-                    }, to=list(connected_clients))
-                last_broadcast['graph'] = now
-            
-            time.sleep(0.5)
-        except Exception as e:
-            logger.error(f"Broadcaster error: {e}")
-            time.sleep(1)
+    metric_rows = []
+    for row in rows:
+        metric_rows.append({
+            'timestamp': row.get('timestamp'),
+            metric_name: row.get(source_column)
+        })
+
+    latest = metric_rows[-1] if metric_rows else None
+    payload = {
+        'success': True,
+        'metric': metric_name,
+        'count': len(metric_rows),
+        'latest': latest,
+        'rows': metric_rows
+    }
+
+    return jsonify(payload)
+
+
+def _log_response(log_key: str):
+    """Build standardized log response from CSV file."""
+    path = CSV_FILES[log_key]
+    rows = _read_csv_rows(path)
+
+    payload = {
+        'success': True,
+        'log': log_key,
+        'file': os.path.basename(path),
+        'count': len(rows),
+        'rows': rows
+    }
+
+    return jsonify(payload)
+
+
+def _delete_log_file(log_key: str):
+    """Delete a log CSV file for a given key."""
+    path = CSV_FILES[log_key]
+
+    if not os.path.exists(path):
+        return jsonify({
+            'success': True,
+            'message': f"{os.path.basename(path)} already deleted",
+            'file': os.path.basename(path)
+        })
+
+    try:
+        os.remove(path)
+        payload = {
+            'success': True,
+            'message': f"Deleted {os.path.basename(path)}",
+            'file': os.path.basename(path)
+        }
+        return jsonify(payload)
+    except Exception as e:
+        logger.error(f"Failed deleting CSV {path}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'file': os.path.basename(path)
+        }), 500
 
 
 @app.route('/api/health', methods=['GET'])
 def health():
-    """Minimal health endpoint"""
-    return jsonify({'status': 'ok', 'clients': len(connected_clients)})
+    """Minimal health endpoint for polling clients."""
+    return jsonify({'status': 'ok'})
+
+
+@app.route('/api/voc_aqi', methods=['GET'])
+def get_voc_aqi():
+    return _metric_response('voc_aqi', 'voc_aqi')
+
+
+@app.route('/api/temp_c', methods=['GET'])
+def get_temp_c():
+    return _metric_response('temp_c', 'temperature')
+
+
+@app.route('/api/humidity_percent', methods=['GET'])
+def get_humidity_percent():
+    return _metric_response('humidity_percent', 'humidity')
+
+
+@app.route('/api/pressure_hpa', methods=['GET'])
+def get_pressure_hpa():
+    return _metric_response('pressure_hpa', 'pressure')
+
+
+@app.route('/api/voc_ppb', methods=['GET'])
+def get_voc_ppb():
+    return _metric_response('voc_ppb', 'voc_ppb')
+
+
+@app.route('/api/bme688_log', methods=['GET'])
+def get_bme688_log():
+    return _log_response('bme688_log')
+
+
+@app.route('/api/dgs2_log', methods=['GET'])
+def get_dgs2_log():
+    return _log_response('dgs2_log')
+
+
+@app.route('/api/anomaly_log', methods=['GET'])
+def get_anomaly_log():
+    return _log_response('anomaly_log')
+
+
+@app.route('/api/combined_log', methods=['GET'])
+def get_combined_log():
+    path = _combined_csv_path()
+    rows = _read_csv_rows(path)
+    payload = {
+        'success': True,
+        'log': 'combined_log',
+        'file': os.path.basename(path),
+        'count': len(rows),
+        'rows': rows
+    }
+    return jsonify(payload)
+
+
+@app.route('/api/bme688_log/delete', methods=['DELETE'])
+def delete_bme688_log():
+    return _delete_log_file('bme688_log')
+
+
+@app.route('/api/dgs2_log/delete', methods=['DELETE'])
+def delete_dgs2_log():
+    return _delete_log_file('dgs2_log')
+
+
+@app.route('/api/anomaly_log/delete', methods=['DELETE'])
+def delete_anomaly_log():
+    return _delete_log_file('anomaly_log')
+
+
+@app.route('/api/combined_log/delete', methods=['DELETE'])
+def delete_combined_log():
+    path = _combined_csv_path()
+    if not os.path.exists(path):
+        return jsonify({
+            'success': True,
+            'message': f"{os.path.basename(path)} already deleted",
+            'file': os.path.basename(path)
+        })
+
+    try:
+        os.remove(path)
+        payload = {
+            'success': True,
+            'message': f"Deleted {os.path.basename(path)}",
+            'file': os.path.basename(path)
+        }
+        return jsonify(payload)
+    except Exception as e:
+        logger.error(f"Failed deleting CSV {path}: {e}")
+        return jsonify({
+            'success': False,
+            'error': str(e),
+            'file': os.path.basename(path)
+        }), 500
 
 
 def run():
-    logger.info(f"🚀 Starting WebSocket-only server on {API_HOST}:{API_PORT}")
-    logger.info("✓ REAL-TIME STREAMING ONLY (WebSocket)")
-    logger.info("✓ NO HTTP POLLING")
-    
-    thread = threading.Thread(target=broadcast_realtime_data, daemon=True)
-    thread.start()
-    
-    socketio.run(app, host=API_HOST, port=API_PORT, debug=False, allow_unsafe_werkzeug=True)
+    logger.info(f"🚀 Starting HTTP polling API server on {API_HOST}:{API_PORT}")
+    logger.info("✓ Frontend should poll these endpoints every 60 seconds")
+    app.run(host=API_HOST, port=API_PORT, debug=False)
 
 
 if __name__ == '__main__':

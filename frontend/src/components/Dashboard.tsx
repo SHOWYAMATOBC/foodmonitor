@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import SensorPanel from './SensorPanel';
 import LiveGraphs from './LiveGraphs';
 import CameraFeed from './CameraFeed';
@@ -10,19 +11,18 @@ import SensorListPanel from './SensorListPanel';
 import AIPredictionVisualizer from './AIPredictionVisualizer';
 import { Cog6ToothIcon } from '@heroicons/react/24/outline';
 
-// Mock data generator
-const generateMockData = () => {
-  return {
-    voc: Math.floor(Math.random() * 500),
-    temperature: +(20 + Math.random() * 10).toFixed(1),
-    humidity: +(40 + Math.random() * 30).toFixed(1),
-    co2: Math.floor(400 + Math.random() * 600),
-    ethylene: +(Math.random() * 100).toFixed(2),
-    alcohol: +(Math.random() * 50).toFixed(2)
-  };
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
+const initialSensorData = {
+  voc: 0,
+  temperature: 0,
+  humidity: 0,
+  co2: 0,
+  ethylene: 0,
+  alcohol: 0
 };
 
-const generateTimeLabels = (count: number, interval: number) => {
+const generateTimeLabels = (count: number) => {
   const labels = [];
   for (let i = 0; i < count; i++) {
     if (i === count - 1) {
@@ -35,14 +35,15 @@ const generateTimeLabels = (count: number, interval: number) => {
 };
 
 const Dashboard: React.FC = () => {
-  const [sensorData, setSensorData] = useState(generateMockData());
-  const [showCamera, setShowCamera] = useState(false);
+  const navigate = useNavigate();
+  const [sensorData, setSensorData] = useState(initialSensorData);
+  const [showCamera] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [showWifi, setShowWifi] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [showPrediction, setShowPrediction] = useState(false);
   const [graphData, setGraphData] = useState(() => {
-    const labels = generateTimeLabels(12, 1); // 12 hours, 1-hour interval
+    const labels = generateTimeLabels(12); // 12 hours, 1-hour interval
     return {
       labels,
       co2: Array(12).fill(0),
@@ -55,23 +56,53 @@ const Dashboard: React.FC = () => {
   });
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      const newData = generateMockData();
+    const toNumber = (value: unknown, fallback = 0): number => {
+      const parsed = Number(value);
+      return Number.isFinite(parsed) ? parsed : fallback;
+    };
+
+    const fetchMetric = async (endpoint: string, key: string): Promise<number> => {
+      try {
+        const response = await fetch(`${API_BASE_URL}${endpoint}`);
+        if (!response.ok) {
+          return 0;
+        }
+
+        const data = await response.json();
+        const latest = data?.latest;
+        if (!latest) {
+          return 0;
+        }
+
+        return toNumber(latest[key]);
+      } catch {
+        return 0;
+      }
+    };
+
+    const pollStats = async () => {
+      const [vocAqi, tempC, humidityPercent, pressureHpa, vocPpb] = await Promise.all([
+        fetchMetric('/api/voc_aqi', 'voc_aqi'),
+        fetchMetric('/api/temp_c', 'temp_c'),
+        fetchMetric('/api/humidity_percent', 'humidity_percent'),
+        fetchMetric('/api/pressure_hpa', 'pressure_hpa'),
+        fetchMetric('/api/voc_ppb', 'voc_ppb')
+      ]);
+
+      const newData = {
+        voc: vocAqi,
+        temperature: tempC,
+        humidity: humidityPercent,
+        co2: vocPpb,
+        ethylene: pressureHpa,
+        alcohol: 0
+      };
+
       setSensorData(newData);
-      
+
       setGraphData(prev => {
-        const updateArray = (arr: number[], value: number) => {
-          const newArr = [...arr];
-          newArr.shift();
-          newArr.push(value);
-          return newArr;
-        };
-
-        const now = new Date();
-        const newLabel = now.toLocaleTimeString('en-US', { hour12: false });
-
         // Shift labels left and add "now" at the end
-        const newLabels = prev.labels.map((label, i) => {
+        const newLabels = prev.labels.map((_, i) => {
           if (i === prev.labels.length - 1) return 'now';
           const nextLabel = prev.labels[i + 1];
           if (nextLabel === 'now') return '1h';
@@ -100,7 +131,10 @@ const Dashboard: React.FC = () => {
           humidity: updateArrayWithHistory(prev.humidity, newData.humidity)
         };
       });
-    }, 5000); // Simulating hourly updates every 5 seconds for demonstration
+    };
+
+    pollStats();
+    const interval = setInterval(pollStats, 60000);
 
     return () => clearInterval(interval);
   }, []);
@@ -140,6 +174,12 @@ const Dashboard: React.FC = () => {
               className="px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors"
             >
               Predict
+            </button>
+            <button
+              onClick={() => navigate('/logs')}
+              className="px-4 py-2 bg-slate-700 text-white rounded-lg hover:bg-slate-800 transition-colors"
+            >
+              Logs
             </button>
             <button
               onClick={() => setShowMap(!showMap)}

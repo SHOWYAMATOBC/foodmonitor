@@ -85,11 +85,8 @@ const SensorListPanel: React.FC<SensorListPanelProps> = ({
 
   // Mock sensors data if not provided
   const defaultSensors: Sensor[] = [
-    { id: 'DGS2-001', name: 'Main Sensor', type: 'DGS2 970', isConnected: true, lastSeen: 'now', signalStrength: 85 },
-    { id: 'TEMP-001', name: 'Temperature', type: 'DHT22', isConnected: true, lastSeen: '2s ago', signalStrength: 92 },
-    { id: 'CO2-001', name: 'CO2 Monitor', type: 'MH-Z19', isConnected: false, lastSeen: '5m ago', signalStrength: 0 },
-    { id: 'CAM-001', name: 'Camera Feed', type: 'USB', isConnected: true, lastSeen: 'now', signalStrength: 100 },
-    { id: 'DGS2-002', name: 'Secondary Sensor', type: 'DGS2 970', isConnected: true, lastSeen: '1s ago', signalStrength: 78 },
+    { id: 'BME688-001', name: 'bme688', type: 'BME688', isConnected: true, lastSeen: 'now', signalStrength: 92 },
+    { id: 'DGS2-001', name: 'dgs2', type: 'DGS2 970', isConnected: true, lastSeen: 'now', signalStrength: 85 },
   ];
 
   const displaySensors = sensors || defaultSensors;
